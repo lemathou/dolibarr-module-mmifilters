@@ -11,7 +11,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if (in_array($parameters['currentcontext'], ['propallist']))
+		if ($this->in_context($parameters, ['propallist']))
 		{
 			$no_user = GETPOST('search_no_user', 'bool');
 			//var_dump($no_user);
@@ -20,7 +20,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			$print .= '<input type="checkbox" name="search_no_user" value="1"'.($no_user ?' checked="checked"' :'').' /> Sans commercial';
 			$print .= '</div>';
 		}
-		if (in_array($parameters['currentcontext'], ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			$thirdparty_pro = GETPOST('search_thirdparty_pro', 'bool');
 			//var_dump($no_user);
@@ -47,12 +47,40 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if (in_array($parameters['currentcontext'], ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= " AND c2.fk_socpeople IS NULL AND sc2.fk_user IS NULL";
-			if (GETPOST('search_thirdparty_pro', 'bool'))
-				$print .= " AND (s.siren IS NOT NULL AND s.siren != '')";
+			if (GETPOST('search_thirdparty_pro', 'bool')) {
+				$l = [];
+				foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
+					$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
+				$l[] = '(s2.pro = 1)';
+				
+				$print .= ' AND ('.implode(' OR ', $l).')';
+			}
+		}
+
+		if (! $error)
+		{
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+	
+	function printFieldListFrom($parameters, &$object, &$action, $hookmanager)
+	{
+		$error = 0; // Error counter
+		$print = '';
+		
+		if ($this->in_context($parameters, ['invoicelist']))
+		{
+			//
 		}
 
 		if (! $error)
@@ -72,10 +100,12 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if (in_array($parameters['currentcontext'], ['propallist']))
+		if ($this->in_context($parameters, ['propallist', 'invoicelist']))
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_commerciaux as sc2 ON sc2.fk_soc=s.rowid";
+						if (GETPOST('search_thirdparty_pro', 'bool'))			if (GETPOST('search_thirdparty_pro', 'bool'))if (GETPOST('search_thirdparty_pro', 'bool'))
+				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as s2 ON s2.fk_object=s.rowid";
 		}
 
 		if (! $error)
@@ -95,10 +125,32 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if (in_array($parameters['currentcontext'], ['propallist']))
+		if ($this->in_context($parameters, ['propallist']))
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX.'element_contact as c2 ON c2.element_id=p.rowid AND c2.fk_c_type_contact=31';
+		}
+
+		if (! $error)
+		{
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+	
+	function printFieldListJoinInvoice($parameters, &$object, &$action, $hookmanager)
+	{
+		$error = 0; // Error counter
+		$print = '';
+		
+		if ($this->in_context($parameters, ['invoicelist']))
+		{
+			//
 		}
 
 		if (! $error)
@@ -118,7 +170,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if (in_array($parameters['currentcontext'], ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			if (GETPOST('search_no_user', 'bool')) {
 				$print .= '&search_no_user=1';
@@ -146,7 +198,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 
 		$langs->load('mmiprestasync@mmiprestasync');
 
-		if (in_array($parameters['currentcontext'], ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			//var_dump($parameters);
 			//$this->results = [];
@@ -168,7 +220,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		//echo "action: " . $action;
 		//print_r($object);
 
-		if (in_array($parameters['currentcontext'], ['propallist'])) //, 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist']))
 		{
 			$action     = GETPOST('action', 'aZ09') ?GETPOST('action', 'aZ09') : 'view';
 			$massaction = GETPOST('massaction', 'alpha');
@@ -255,7 +307,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		
 		$db = $GLOBALS['db'];
 		
-		if (in_array($parameters['currentcontext'], ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			//var_dump($parameters);
 			if ($_POST['massaction']=='assign') {

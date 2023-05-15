@@ -100,11 +100,11 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if ($this->in_context($parameters, ['propallist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_commerciaux as sc2 ON sc2.fk_soc=s.rowid";
-						if (GETPOST('search_thirdparty_pro', 'bool'))			if (GETPOST('search_thirdparty_pro', 'bool'))if (GETPOST('search_thirdparty_pro', 'bool'))
+			if (GETPOST('search_thirdparty_pro', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as s2 ON s2.fk_object=s.rowid";
 		}
 

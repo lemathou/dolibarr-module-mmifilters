@@ -28,11 +28,7 @@ ModuleMMIFiltersDesc = Filtres avancés sur Propales, Commandes, Factures, etc.
 MMIFiltersSetup = MMIFilters setup
 Settings = Settings
 MMIFiltersSetupPage = MMIFilters setup page
-MMIFILTERS_MYPARAM1 = My param 1
-MMIFILTERS_MYPARAM1Tooltip = My param 1 tooltip
-MMIFILTERS_MYPARAM2=My param 2
-MMIFILTERS_MYPARAM2Tooltip=My param 2 tooltip
-
+MMIFILTERS_PRO_USE_SIREN = Pour le filtre "Pro", rechercher aussi les tiers dont au moins un des champs SIREN, SIRET ou TVA INTRA est non vide
 
 #
 # About page

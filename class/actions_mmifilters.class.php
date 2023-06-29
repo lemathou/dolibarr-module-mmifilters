@@ -44,6 +44,8 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 	
 	function printFieldListWhere($parameters, &$object, &$action, $hookmanager)
 	{
+		global $conf;
+
 		$error = 0; // Error counter
 		$print = '';
 		
@@ -53,8 +55,10 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 				$print .= " AND c2.fk_socpeople IS NULL AND sc2.fk_user IS NULL";
 			if (GETPOST('search_thirdparty_pro', 'bool')) {
 				$l = [];
-				foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
-					$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
+				if (!empty($conf->global->MMIFILTERS_PRO_USE_SIREN)) {
+					foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
+						$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
+				}
 				$l[] = '(s2.pro = 1)';
 				
 				$print .= ' AND ('.implode(' OR ', $l).')';

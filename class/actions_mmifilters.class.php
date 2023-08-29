@@ -28,6 +28,13 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			$print .= '<div class="divsearchfield">';
 			$print .= '<input type="checkbox" name="search_thirdparty_pro" value="1"'.($thirdparty_pro ?' checked="checked"' :'').' /> Uniquement les pro';
 			$print .= '</div>';
+
+			$product_ref = GETPOST('search_product_ref');
+			//var_dump($no_user);
+			
+			$print .= '<div class="divsearchfield">';
+			$print .= '<input type="text" size="6" name="search_product_ref" value="'.$product_ref.'" /> Réf. Produit';
+			$print .= '</div>';
 		}
 
 		if (! $error)
@@ -62,6 +69,9 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 				$l[] = '(s2.pro = 1)';
 				
 				$print .= ' AND ('.implode(' OR ', $l).')';
+			}
+			if ($product_ref = GETPOST('search_product_ref')) {
+				$print .= ' AND prd.ref = "'.$product_ref.'"';
 			}
 		}
 
@@ -133,6 +143,13 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX.'element_contact as c2 ON c2.element_id=p.rowid AND c2.fk_c_type_contact=31';
+			if (GETPOST('search_product_ref')) {
+				$sall = trim((GETPOST('search_all', 'alphanohtml') != '') ?GETPOST('search_all', 'alphanohtml') : GETPOST('sall', 'alphanohtml'));
+				$search_product_category = GETPOST('search_product_category', 'int');
+				if(!($sall || $search_product_category>0))
+					$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."propaldet as pd ON pd.fk_propal=p.rowid";
+				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."product as prd ON prd.rowid=pd.fk_product";
+			}
 		}
 
 		if (! $error)
@@ -154,7 +171,42 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		
 		if ($this->in_context($parameters, ['invoicelist']))
 		{
-			//
+			if (GETPOST('search_product_ref')) {
+				$sall = trim((GETPOST('search_all', 'alphanohtml') != '') ?GETPOST('search_all', 'alphanohtml') : GETPOST('sall', 'alphanohtml'));
+				$search_product_category = GETPOST('search_product_category', 'int');
+				if(!($sall || $search_product_category>0))
+					$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."facturedet as pd ON pd.fk_facture=f.rowid";
+				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."product as prd ON prd.rowid=pd.fk_product";
+			}
+		}
+
+		if (! $error)
+		{
+			$this->resprints = $print;
+			return 0; // or return 1 to replace standard code
+		}
+		else
+		{
+			$this->errors[] = 'Error message';
+			return -1;
+		}
+	}
+	
+	function printFieldListJoinCommande($parameters, &$object, &$action, $hookmanager)
+	{
+		$error = 0; // Error counter
+		$print = '';
+		
+		if ($this->in_context($parameters, ['orderlist']))
+		{
+			if (GETPOST('search_product_ref')) {
+				$sall = trim((GETPOST('search_all', 'alphanohtml') != '') ?GETPOST('search_all', 'alphanohtml') : GETPOST('sall', 'alphanohtml'));
+				$search_product_category = GETPOST('search_product_category', 'int');
+				if(!($sall || $search_product_category>0))
+					$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."commandedet as pd ON pd.fk_commande=c.rowid";
+				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."product as prd ON prd.rowid=pd.fk_product";
+				//echo $print;
+			}
 		}
 
 		if (! $error)
@@ -181,6 +233,9 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			}
 			if (GETPOST('search_thirdparty_pro', 'bool')) {
 				$print .= '&search_thirdparty_pro=1';
+			}
+			if ($product_ref=GETPOST('search_product_ref', 'bool')) {
+				$print .= '&product_ref='.$product_ref;
 			}
 		}
 

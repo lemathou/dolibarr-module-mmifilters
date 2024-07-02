@@ -66,7 +66,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 					foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
 						$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
 				}
-				$l[] = '(s2.pro = 1)';
+				$l[] = '(se2.pro = 1)';
 				
 				$print .= ' AND ('.implode(' OR ', $l).')';
 			}
@@ -119,7 +119,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_commerciaux as sc2 ON sc2.fk_soc=s.rowid";
 			if (GETPOST('search_thirdparty_pro', 'bool'))
-				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as s2 ON s2.fk_object=s.rowid";
+				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as se2 ON se2.fk_object=s.rowid";
 		}
 
 		if (! $error)

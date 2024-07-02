@@ -288,7 +288,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			
 			$fk_commercial = GETPOST('fk_user', 'alpha');
 
-			$permissiontoassign = $user->rights->propale->creer;
+			$permissiontoassign = $user->rights->propal->creer;
 			
 			//var_dump($parameters);
 			//var_dump($action); var_dump($confirm); var_dump($_POST); die();

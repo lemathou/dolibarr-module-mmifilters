@@ -6,6 +6,11 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 {
 	const MOD_NAME = 'mmifilters';
 
+	/** Listes qui portent la case « Uniquement les pro » (RM3495 : + expéditions) */
+	const PRO_CONTEXTS = ['propallist', 'orderlist', 'invoicelist', 'shipmentlist'];
+	/** Listes qui portent le champ « Réf. Produit » (jointure sur les lignes du document) */
+	const PRODUCT_REF_CONTEXTS = ['propallist', 'orderlist', 'invoicelist'];
+
 	function printFieldPreListTitle($parameters, &$object, &$action, $hookmanager)
 	{
 		$error = 0; // Error counter
@@ -20,15 +25,16 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			$print .= '<input type="checkbox" name="search_no_user" value="1"'.($no_user ?' checked="checked"' :'').' /> Sans commercial';
 			$print .= '</div>';
 		}
-		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, self::PRO_CONTEXTS))
 		{
 			$thirdparty_pro = GETPOST('search_thirdparty_pro', 'bool');
-			//var_dump($no_user);
 			
 			$print .= '<div class="divsearchfield">';
 			$print .= '<input type="checkbox" name="search_thirdparty_pro" value="1"'.($thirdparty_pro ?' checked="checked"' :'').' /> Uniquement les pro';
 			$print .= '</div>';
-
+		}
+		if ($this->in_context($parameters, self::PRODUCT_REF_CONTEXTS))
+		{
 			$product_ref = GETPOST('search_product_ref');
 			//var_dump($no_user);
 			
@@ -56,20 +62,18 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist']))
 		{
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= " AND c2.fk_socpeople IS NULL AND sc2.fk_user IS NULL";
-			if (GETPOST('search_thirdparty_pro', 'bool')) {
-				$l = [];
-				if (!empty($conf->global->MMIFILTERS_PRO_USE_SIREN)) {
-					foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
-						$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
-				}
-				$l[] = '(se2.pro = 1)';
-				
-				$print .= ' AND ('.implode(' OR ', $l).')';
-			}
+		}
+		if ($this->in_context($parameters, self::PRO_CONTEXTS))
+		{
+			if (GETPOST('search_thirdparty_pro', 'bool'))
+				$print .= self::proWhereClause();
+		}
+		if ($this->in_context($parameters, self::PRODUCT_REF_CONTEXTS))
+		{
 			if ($product_ref = GETPOST('search_product_ref')) {
 				$print .= ' AND prd.ref = "'.$product_ref.'"';
 			}
@@ -87,14 +91,42 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		}
 	}
 	
+	/**
+	 * Jointure vers les extrafields du tiers (alias s déjà présent dans la liste) pour le filtre « pro ».
+	 */
+	static function proJoinClause()
+	{
+		return ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as se2 ON se2.fk_object=s.rowid";
+	}
+
+	/**
+	 * Clause WHERE du filtre « pro » : extrafield pro = 1, ou SIREN/SIRET/TVA intra renseigné si MMIFILTERS_PRO_USE_SIREN.
+	 */
+	static function proWhereClause()
+	{
+		global $conf;
+
+		$l = [];
+		if (!empty($conf->global->MMIFILTERS_PRO_USE_SIREN)) {
+			foreach(['siren', 'siret', 'tva_intra'] as $fieldname)
+				$l[] = '(s.'.$fieldname.' IS NOT NULL AND s.'.$fieldname.' != "")';
+		}
+		$l[] = '(se2.pro = 1)';
+
+		return ' AND ('.implode(' OR ', $l).')';
+	}
+
 	function printFieldListFrom($parameters, &$object, &$action, $hookmanager)
 	{
 		$error = 0; // Error counter
 		$print = '';
 		
-		if ($this->in_context($parameters, ['invoicelist']))
+		// Liste des expéditions : le hook natif printFieldListFrom est exécuté après « LEFT JOIN societe as s »,
+		// la jointure extrafields peut donc s'y greffer sans le hook maison printFieldListJoinSoc (RM3495).
+		if ($this->in_context($parameters, ['shipmentlist']))
 		{
-			//
+			if (GETPOST('search_thirdparty_pro', 'bool'))
+				$print .= self::proJoinClause();
 		}
 
 		if (! $error)
@@ -119,7 +151,7 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 			if (GETPOST('search_no_user', 'bool'))
 				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_commerciaux as sc2 ON sc2.fk_soc=s.rowid";
 			if (GETPOST('search_thirdparty_pro', 'bool'))
-				$print .= ' LEFT JOIN '.MAIN_DB_PREFIX."societe_extrafields as se2 ON se2.fk_object=s.rowid";
+				$print .= self::proJoinClause();
 		}
 
 		if (! $error)
@@ -226,14 +258,20 @@ class ActionsMMIFilters extends MMI_Actions_1_0
 		$error = 0; // Error counter
 		$print = '';
 		
-		if ($this->in_context($parameters, ['propallist', 'orderlist', 'invoicelist']))
+		if ($this->in_context($parameters, ['propallist']))
 		{
 			if (GETPOST('search_no_user', 'bool')) {
 				$print .= '&search_no_user=1';
 			}
+		}
+		if ($this->in_context($parameters, self::PRO_CONTEXTS))
+		{
 			if (GETPOST('search_thirdparty_pro', 'bool')) {
 				$print .= '&search_thirdparty_pro=1';
 			}
+		}
+		if ($this->in_context($parameters, self::PRODUCT_REF_CONTEXTS))
+		{
 			if ($product_ref=GETPOST('search_product_ref', 'bool')) {
 				$print .= '&product_ref='.$product_ref;
 			}
